@@ -1,7 +1,29 @@
 const BrowserSyncPlugin = require('browser-sync-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const HtmlWebPackPlugin = require('html-webpack-plugin');
+const path = require('path');
+
 module.exports = {
-entry: './src/index.html',
-mode: 'development',
+entry: {
+  main: './src/index.js'
+},
+mode: "development",
+output: {
+  path: path.resolve(__dirname, 'dist'),
+  filename: '[name].js',
+  publicPath: '/'
+},
+devServer: {
+  host: '0.0.0.0',
+  port: 3000,
+  contentBase: './dist'
+},
+watch: true,
+watchOptions: {
+aggregateTimeout: 1000,
+poll: 5000,
+ignored: '/node_modules/'
+},
 module: {
   rules: [
     {
@@ -9,63 +31,36 @@ module: {
       loaders: ['awesome-typescript-loader', 'angular2-template-loader?keepUrl=true'],
       exclude: [/\.(spec|e2e)\.ts$/]
     },
-    /* Embed files. */
-    { 
-      test: /\.(html|css)$/, 
-      loader: 'raw-loader',
-      exclude: /\.async\.(html|css)$/
-    },
-    /* Async loading. */
     {
-      test: /\.async\.(html|css)$/, 
-      loaders: ['file?name=[name].[hash].[ext]', 'extract']
+      test: /\.js$/,
+      exclude: /node_modules/,
+      use: {
+        loader: "babel-loader"
+      }
+    },
+    {
+      test: /\.css$/,
+      use: [MiniCssExtractPlugin.loader, "css-loader"]
+    },
+    {
+      test: /\.html$/,
+      use: [
+        {
+          loader: "html-loader",
+          options: { minimize: true }
+        }
+      ]
     }
+   ]
+ },
+ plugins: [
+    new HtmlWebPackPlugin({
+      template: "./src/index.html",
+      filename: "./index.html"
+    }),
+    new MiniCssExtractPlugin({
+      filename: "[name].css",
+      chunkFilename: "[id].css"
+    })
   ]
-},
-output: {
-  filename: 'main.js'
-},
-watchOptions: {
-  aggregateTimeout: 500,
-  poll: 500
-},
-plugins: [
-  new BrowserSyncPlugin(
-    // BrowserSync options
-    {
-      // browse to http://localhost:3000/ during development
-      host: 'localhost',
-      port: 3000,
-      // reload: true,
-      // files: ['./src/app/*.html', './src/app/*.css'],
-      // open: false
-      
-
-       // works but no proxy 
-       // open: false,
-       // server: {baseDir: ['dist']}
-
-
-      // proxy the Webpack Dev Server endpoint
-      // (which should be serving on http://localhost:3100/)
-      // through BrowserSync
-      proxy: '192.168.33.17:3000',
-      open: false,//true leads to bs error headless environment, do not move
-      // reload: false,
-      files: ['./src/app/**/*.css', './src/app/**/*.html', './src/app/index.html'],
-    
-
-    },
-    // plugin options
-    {
-      // prevent BrowserSync from reloading the page
-      // and let Webpack Dev Server take care of this
-        reload: false,
-      
-    }
-  )
- ]
-}
-
-
-
+};
